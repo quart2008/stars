@@ -1,0 +1,40 @@
+HA$PBExportHeader$f_get_token_multichar.srf
+$PBExportComments$Gets and separates string tokens
+global type f_get_token_multichar from function_object
+end type
+
+forward prototypes
+global function string f_get_token_multichar (ref string source, string separator)
+end prototypes
+
+global function string f_get_token_multichar (ref string source, string separator);// String Function f_GET_TOKEN_MultiChar (ref string Source, string Separator)
+
+//	Same as f_Get_Token except that it handles multi-character separators
+
+// The function f_get_Token receives, as arguments, the string from which
+// the token is to be stripped off, from the left, and the separator
+// character.  If the separator character does not appear in the string,
+// it returns the entire string.  Otherwise, it returns the token, not
+// including the separator character.  In either case, the source string
+// is truncated on the left, by the length of the token and separator
+// character, if any.
+
+
+Long		p																				//	04/20/2006 -- CJH -- Code Change (int to long)
+string 	ret
+//////////////////////////////////////////////
+p				=	Pos(lower(source), lower(separator))						// Get the position of the separator
+	
+if p = 0 then																			// if no separator, 
+	ret 		=	source																// return the whole source string and
+	source 	=	""																		// make the original source of zero length
+else
+	ret 		= 	Mid(source, 1, p - 1)											// otherwise, return just the token and
+	//	11/20/2006 -- CJH -- Begin Code Change (Added (Len(Separator) - 1) to account for a separator with a length > 1)
+	source 	=	Right(source, Len(source) - p - (Len(Separator) - 1))	// strip it & the separator
+	//	11/20/2006 -- CJH -- End Code Change
+end if
+
+return ret
+end function
+

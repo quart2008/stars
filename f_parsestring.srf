@@ -1,0 +1,29 @@
+HA$PBExportHeader$f_parsestring.srf
+global type f_parsestring from function_object
+end type
+
+forward prototypes
+global function integer f_parsestring (string vs_parse, string vs_delimeter, ref string rs_parsed[])
+end prototypes
+
+global function integer f_parsestring (string vs_parse, string vs_delimeter, ref string rs_parsed[]);IF Len(vs_Parse) = 0 THEN Return(0)
+
+String						ls_Empty[],	ls_Parsed
+
+rs_Parsed[]					= ls_Empty[]
+
+IF Right(vs_Parse, Len(vs_Delimeter)) <> vs_Delimeter THEN
+	vs_Parse					= vs_Parse + vs_Delimeter
+END IF
+
+DO WHILE Len(vs_Parse) > 0
+	//	11/21/2006 -- CJH -- Begin Code Change (Use f_Get_Token_MultiChar instead of f_Get_Token)
+	ls_Parsed				= f_Get_Token_MultiChar(vs_Parse, vs_Delimeter)
+	//	11/21/2006 -- CJH -- End Code Change
+	rs_Parsed[UpperBound(rs_Parsed[]) + 1]		&
+								= ls_Parsed
+LOOP
+
+Return(UpperBound(rs_Parsed[]))
+end function
+

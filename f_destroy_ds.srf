@@ -1,0 +1,26 @@
+HA$PBExportHeader$f_destroy_ds.srf
+global type f_destroy_ds from function_object
+end type
+
+forward prototypes
+global subroutine f_destroy_ds (datastore ads[])
+end prototypes
+
+global subroutine f_destroy_ds (datastore ads[]);// This function destroys the datastore lists passed by ads[]
+// 04/18/11 AndyG Track Appeon UFA Work around GOTO
+//**********************************************************************
+
+Long		ll_i, ll_counts
+
+ll_counts = UpperBound(ads)
+If ll_counts < 1 Then Return
+
+For ll_i = 1 To ll_counts
+	If	IsValid(ads[ll_i]) Then Destroy ads[ll_i]
+Next
+
+Return
+
+
+end subroutine
+

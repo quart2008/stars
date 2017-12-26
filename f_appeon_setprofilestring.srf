@@ -1,0 +1,32 @@
+HA$PBExportHeader$f_appeon_setprofilestring.srf
+global type f_appeon_setprofilestring from function_object
+end type
+
+forward prototypes
+global function long f_appeon_setprofilestring (string as_filename, string as_section, string as_key, string as_value)
+end prototypes
+
+global function long f_appeon_setprofilestring (string as_filename, string as_section, string as_key, string as_value);//***********************************************************************
+//. Function: f_appeon_setprofilestring()
+//.
+//. Descr: Replace the PowerBuilder's function setprofilestring and the arguments is same.
+//.
+//. Passed:		string		as_filename
+//. Passed:		string		as_section
+//. Passed:		string		as_key
+//. Passed:		string		as_value
+//.
+//. Returns:	long
+//.
+//***********************************************************************
+//   Date   Init               Description of Changes Made                
+// -------- ----	-------------------------------------------------------- 
+// 07/05/11 WinacentZ Track Appeon Performance tuning
+//***********************************************************************
+long ll_ret
+
+ll_ret = WritePrivateProfileString(as_section, as_key, as_value, as_filename)
+
+return ll_ret
+end function
+

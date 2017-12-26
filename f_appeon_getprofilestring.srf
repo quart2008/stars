@@ -1,0 +1,33 @@
+HA$PBExportHeader$f_appeon_getprofilestring.srf
+global type f_appeon_getprofilestring from function_object
+end type
+
+forward prototypes
+global function string f_appeon_getprofilestring (string as_filename, string as_section, string as_key, string as_default)
+end prototypes
+
+global function string f_appeon_getprofilestring (string as_filename, string as_section, string as_key, string as_default);//***********************************************************************
+//. Function: f_appeon_getprofilestring()
+//.
+//. Descr: Replace the PowerBuilder's function profilestring and the arguments is same.
+//.
+//. Passed:		string		as_filename
+//. Passed:		string		as_section
+//. Passed:		string		as_key
+//. Passed:		string		as_default
+//.
+//. Returns:	String
+//.
+//***********************************************************************
+//   Date   Init               Description of Changes Made                
+// -------- ----	-------------------------------------------------------- 
+// 07/05/11 WinacentZ Track Appeon Performance tuning
+//***********************************************************************
+string ls_Value
+
+ls_Value = Space(32767)
+GetPrivateProfileString(as_section, as_key, as_default, ls_value, 32767, as_filename)
+
+return ls_value
+end function
+

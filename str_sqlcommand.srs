@@ -1,0 +1,5 @@
+HA$PBExportHeader$str_sqlcommand.srs
+global type str_sqlcommand from structure
+	string		s_sql_insert[]
+end type
+

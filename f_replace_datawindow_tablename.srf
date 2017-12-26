@@ -1,0 +1,338 @@
+HA$PBExportHeader$f_replace_datawindow_tablename.srf
+global type f_replace_datawindow_tablename from function_object
+end type
+
+forward prototypes
+global subroutine f_replace_datawindow_tablename (ref datawindow adw_dw, string as_sql)
+global function string f_replace_datawindow_tablename (string as_sql)
+end prototypes
+
+global subroutine f_replace_datawindow_tablename (ref datawindow adw_dw, string as_sql);//====================================================================
+// Function: f_modify_datawindow_column_title()
+//--------------------------------------------------------------------
+// Description:	AFTER APB TRANSLATE PB'S SYNTAXFROMSQL , THE TEXT OF COLNUM 'S TITLE WILL BE ADD TABLE NAME 
+//--------------------------------------------------------------------
+// Arguments:
+// 	reference    datawindow    adw_dw
+// 	value        string        as_sql
+//--------------------------------------------------------------------
+// Returns:  (none)
+//--------------------------------------------------------------------
+// Author:	limin		Date: 07/14/11
+//--------------------------------------------------------------------
+//	Copyright (c) 2008-2011 Appeon, All rights reserved.
+//--------------------------------------------------------------------
+// Modify History:
+// 07/29/11 limin Track Appeon Performance Tuning --fix bug
+//
+//====================================================================
+integer 	li_cnt, li_rc, li_count, li_maxcount , li_four , li_validid 
+long 		ll_pos, ll_pos_as 
+string 	ls_col_name,ls_modifyname, ls_text ,ls_modify, ls_tablename[], ls_tables, ls_sql
+string 	ls_type , ls_err, ls_fromwheretable,  ls_dbname, ls_dbname2, ls_colname2
+boolean	lbn_control, lbn_flag
+n_cst_string	inv_str
+
+if gb_is_web = true then 
+	 
+	li_rc	= 0 
+	ls_type = '1' 
+	lbn_control	= false
+	
+	li_cnt = Integer( adw_dw.Describe("DataWindow.Column.Count" ))
+	ll_pos =   pos(Upper(as_sql),' FROM ')
+	ll_pos_as	=  pos(Upper(as_sql),' WHERE ' )
+	
+	if isnull(as_sql) or trim(as_sql) = '' then 
+		return
+	end if 
+	
+	IF ll_pos = 0 THEN
+		RETURN
+	END IF 
+
+	IF ll_pos_as = 0 THEN
+		//TYPE 2 : FROM PROVIDERS PV FULL OUTER JOIN PROV_NPI_XREF XR ON PV.PROV_ID=XR.PROV_ID
+		ls_type	= '2'
+		ls_sql		= right(as_sql, len(as_sql) - ll_pos    )
+	else
+		// 07/29/11 limin Track Appeon Performance Tuning --fix bug
+//		//TYPE 1 : FROM C1_SUM_DIAG_PROC  ST, PERIOD_CNTL  PC    WHERE 
+//		ls_sql		= MID(as_sql, ll_pos + 1 , ll_pos_as + 5 - ll_pos   )
+		//TYPE 1 :  C1_SUM_DIAG_PROC  ST, PERIOD_CNTL  PC 
+		//TYPE 1 :  C1_SUM_DIAG_PROC  ST,PERIOD_CNTL  PC 
+		ls_sql		= TRIM(MID(as_sql, ll_pos + 6  , ll_pos_as  - ll_pos - 6 + 1   ))
+		
+	END IF
+	
+	DO
+		if ls_type = '1' then
+//			ll_pos 		= pos(ls_sql,' ')
+//			ls_sql			= trim( right(ls_sql,len(ls_sql) - ll_pos ) )
+//			ll_pos_as 	= pos(ls_sql,' ')
+//			
+//			li_rc ++
+//			ls_tablename[li_rc] = left(ls_sql,ll_pos_as - 1)
+//			ll_pos			= pos(ls_sql,',')
+//			if  ll_pos > 0 then 
+//				ls_sql 	= right(ls_sql,len(ls_sql) - ll_pos)
+//			else
+//				lbn_control	= true
+//			end if 	
+			ll_pos 		= pos(ls_sql,',')
+			if ll_pos > 0 then 
+				ls_fromwheretable		=  trim( left(ls_sql, ll_pos  - 1 ) )
+				ls_sql		=  trim( mid(ls_sql,ll_pos + 1 ,len(ls_sql) - ll_pos  ) )
+			else
+				ls_fromwheretable		=  trim( ls_sql )
+				lbn_control	= true
+			end if 
+			ll_pos_as 	= pos(ls_fromwheretable,' ')
+			
+			li_rc ++
+			if ll_pos_as > 0 then 
+				ls_tablename[li_rc] = left(ls_fromwheretable,ll_pos_as - 1)
+			else
+				lbn_control	= true
+			end if
+//			ll_pos			= pos(ls_sql,',')
+//			if  ll_pos > 0 then 
+//				ls_sql 	= right(ls_sql,len(ls_sql) - ll_pos)
+//			else
+//				lbn_control	= true
+//			end if 
+		elseif  ls_type = '2' then
+			//TYPE 2 : FROM PROVIDERS PV FULL OUTER JOIN PROV_NPI_XREF XR ON PV.PROV_ID=XR.PROV_ID
+			ll_pos 		= pos(ls_sql,' ')
+			ls_sql			= trim( right(ls_sql,len(ls_sql) - ll_pos ) )
+			ll_pos_as 	= pos(ls_sql,' ')
+			
+			li_rc ++
+			ls_tablename[li_rc] = left(ls_sql,ll_pos_as - 1)
+			ll_pos			= pos(ls_sql,'OUTER JOIN ')
+			if  ll_pos > 0 then 
+				ls_sql 	= right(ls_sql,len(ls_sql) - ll_pos - 9 )
+			else
+				lbn_control	= true
+			end if 
+		end if 
+		
+	LOOP WHILE lbn_control = false
+	
+	li_maxcount =  upperbound(ls_tablename)
+	ls_modify = ''
+	FOR li_rc = 1 TO li_cnt
+		// Get the object name from the datawindow
+		ls_col_name 	= 	adw_dw.Describe('#' + string(li_rc) + '.name')
+		ls_text			= adw_dw.Describe(ls_col_name + '_t.text')
+		
+		// 07/29/11 limin Track Appeon Performance Tuning --fix bug
+		ls_dbname		= 	adw_dw.Describe('#' + string(li_rc) + '.dbname')
+		
+		// 07/29/11 limin Track Appeon Performance Tuning --fix bug
+		// when the column have longer more then 40 ,the column name will drop over 40 
+		li_four = 4 
+		ls_dbname2	=	inv_str.of_globalreplace(ls_dbname,'.','_')
+		ls_colname2		=	ls_col_name +'_t'
+		for li_validid =1 to li_four 
+			if isnull(ls_text) or ls_text = '!' or ls_text = '?' then
+				choose case li_validid 
+					case 1 
+						ls_colname2 = 	ls_col_name+'_'
+					case 2 
+						ls_colname2	= trim(left(ls_dbname2 ,40))
+					case 3
+						ls_colname2 	= trim(left(ls_dbname2 ,39))+'1'
+					case else 
+						ls_colname2		=	ls_col_name +'_t'
+				end choose 
+				ls_text			= adw_dw.Describe(ls_colname2 + '.text')
+			else
+				exit
+			end if 
+		next 
+				
+		if li_maxcount > 0 then 
+			for li_count = 1 to li_maxcount
+				ls_tables  = ls_tablename[li_count]
+				ls_tables	=	inv_str.of_globalreplace(ls_tables,'_',' ')
+				
+//				// APB TRANSLATE HAD SOME PROBLEM ,THE TABLE NAME 'Prov Npi Xref' CANN'T COMPLETED TRANSLATE
+//				// Prov Npi Xref -- > Prov Npi Xr 
+//				IF Upper(ls_tables) =  Upper('Prov Npi Xref') then
+//					ls_tables = 'Prov Npi Xr'
+//				end if 
+				
+				ll_pos = pos(Upper(ls_text),Upper(ls_tables))
+				if ll_pos > 0 then
+					ls_text	=	inv_str.of_globalreplace(ls_text,ls_tables,'')
+					// 07/29/11 limin Track Appeon Performance Tuning --fix bug
+//					ls_modify +=  ls_col_name+"_t.text = '"+Upper(ls_text)+"' "
+					// 07/29/11 limin Track Appeon Performance Tuning --fix bug
+					ls_text = inv_str.of_clean_string_acc( ls_text)
+					ls_text = Trim(ls_text)
+					ls_text = Upper(left(ls_text,1))+mid(ls_text,2,len(ls_text) -1 )
+									
+					ls_modify +=  ls_colname2+".text = '"+ls_text+"' "
+					
+					continue
+				end if 
+			next 
+		end if 
+	NEXT
+
+	if len(trim(ls_modify)) > 0 then 
+		ls_err	=	adw_dw.modify(ls_modify)
+	end if 
+end if	
+
+end subroutine
+
+global function string f_replace_datawindow_tablename (string as_sql);//====================================================================
+// Function: f_replace_datawindow_tablename
+//--------------------------------------------------------------------
+// Description:
+//--------------------------------------------------------------------
+// Arguments:
+// 	%ScriptArgs%
+//--------------------------------------------------------------------
+// Returns:  string
+//--------------------------------------------------------------------
+// Author:	limin		Date: 08/04/11
+//--------------------------------------------------------------------
+//	Copyright (c) 2008-2011 Appeon, All rights reserved.
+//--------------------------------------------------------------------
+// Modify History:
+//
+//====================================================================
+integer 	li_cnt, li_rc, li_count, li_maxcount , li_four , li_validid 
+long 		ll_pos, ll_pos_as 
+string 	ls_col_name,ls_modifyname, ls_text ,ls_modify, ls_tablename[], ls_tables, ls_sql
+string 	ls_type , ls_err, ls_fromwheretable,  ls_dbname, ls_dbname2, ls_colname2 , ls_fromwhere
+boolean	lbn_control, lbn_flag
+n_cst_string	inv_str
+string 	ls_tablealias[], ls_alias
+long		ll_alias_num, ll_pos_alias, ll_as
+
+ls_fromwhere = as_sql
+li_rc	= 0 
+ll_alias_num = 0
+ls_type = '1' 
+lbn_control	= false
+
+ll_pos =   pos(Upper(as_sql),' FROM ')
+ll_pos_as	=  pos(Upper(as_sql),' WHERE ' )
+
+if isnull(as_sql) or trim(as_sql) = '' then 
+	return as_sql
+end if 
+
+IF ll_pos = 0 THEN
+	RETURN as_sql
+END IF 
+
+IF ll_pos_as = 0 THEN
+	//TYPE 2 : FROM PROVIDERS PV FULL OUTER JOIN PROV_NPI_XREF XR ON PV.PROV_ID=XR.PROV_ID
+	ls_type	= '2'
+	ls_sql		= right(as_sql, len(as_sql) - ll_pos    )
+else
+	// 07/29/11 limin Track Appeon Performance Tuning --fix bug
+	//TYPE 1 :  C1_SUM_DIAG_PROC  ST, PERIOD_CNTL  PC 
+	//TYPE 1 :  C1_SUM_DIAG_PROC  ST,PERIOD_CNTL  PC 
+	ls_sql		= TRIM(MID(as_sql, ll_pos + 6  , ll_pos_as  - ll_pos - 6 + 1   ))
+	
+END IF
+
+DO
+	if ls_type = '1' then
+		ll_pos 		= pos(ls_sql,',')
+		if ll_pos > 0 then 
+			ls_fromwheretable		=  trim( left(ls_sql, ll_pos  - 1 ) )
+			ls_sql		=  trim( mid(ls_sql,ll_pos + 1 ,len(ls_sql) - ll_pos  ) )
+		else
+			ls_fromwheretable		=  trim( ls_sql )
+			lbn_control	= true
+		end if 
+		ll_pos_as 	= pos(ls_fromwheretable,' ')
+		
+		li_rc ++
+		if ll_pos_as > 0 then 
+			ls_tablename[li_rc] = left(ls_fromwheretable,ll_pos_as - 1)
+			// 08/04/11 limin Track Appeon Performance Tuning --fix bug
+			ls_alias 	= 	mid(ls_fromwheretable,ll_pos_as + 1 ,len(ls_fromwheretable) - ll_pos_as  )
+			if isnull(ls_alias) or  trim(ls_alias) = '' or UPPER(trim(ls_alias)) = 'ON' then 
+				//
+			else
+				//	 AS 
+				ll_as = Pos(ls_alias,' ')
+				if 	ll_as > 0  then 
+				 	ls_alias = 	mid(ls_alias,ll_as + 1 ,len(ls_alias) - ll_as  )
+					ll_alias_num ++
+					ls_tablealias[ll_alias_num] = trim(ls_alias)
+				else
+					ll_alias_num ++
+					ls_tablealias[ll_alias_num] = trim(ls_alias)
+				end if 
+			end if 
+		else
+			lbn_control	= true
+		end if
+		
+	elseif  ls_type = '2' then
+		//TYPE 2 : FROM PROVIDERS PV FULL OUTER JOIN PROV_NPI_XREF XR ON PV.PROV_ID=XR.PROV_ID
+		ll_pos 		= pos(ls_sql,' ')
+		ls_sql			= trim( right(ls_sql,len(ls_sql) - ll_pos ) )
+		ll_pos_as 	= pos(ls_sql,' ')
+		
+		li_rc ++
+		ls_tablename[li_rc] = left(ls_sql,ll_pos_as - 1)		
+		ll_pos			= pos(ls_sql,'OUTER JOIN ')
+		
+		// 08/04/11 limin Track Appeon Performance Tuning --fix bug
+		ls_alias	=	trim( right(ls_sql,len(ls_sql) - ll_pos_as ) )
+		ll_pos_alias	  =	pos(ls_alias,' ')
+		if ll_pos_alias > 0 then 
+						
+			ls_alias 	= trim(mid(ls_sql, ll_pos_as + 1  , ll_pos_as  - ll_pos_as ) )
+			if isnull(ls_alias) or  ls_alias= '' then 
+				//
+			else
+				if UPPER(ls_alias) <> 'LEFT' or UPPER(ls_alias) <> 'FULL' or UPPER(ls_alias) <> 'RIGHT' then 
+					//	 AS 
+					ll_as = Pos(ls_alias,' ')
+					if 	ll_as > 0  then 
+						ls_alias = 	mid(ls_alias,ll_as + 1 ,len(ls_alias) - ll_as  )
+						ll_alias_num ++
+						ls_tablealias[ll_alias_num] = trim(ls_alias)
+					else
+						ll_alias_num ++
+						ls_tablealias[ll_alias_num] = trim(ls_alias)
+					end if 
+				end if 
+			end if 
+		end if 
+		// 08/04/11 limin Track Appeon Performance Tuning --fix bug
+		
+		if  ll_pos > 0 then 
+			ls_sql 	= right(ls_sql,len(ls_sql) - ll_pos - 9 )
+		else
+			lbn_control	= true
+		end if 
+	end if 
+	
+LOOP WHILE lbn_control = false
+
+IF ll_alias_num > 0 then 
+	for ll_pos_alias = 1 to ll_alias_num 
+		ls_alias = ls_tablealias[ll_pos_alias]+"."
+		ls_fromwhere = inv_str.of_globalreplace( ls_fromwhere,ls_alias , ' '+ls_tablename[ll_pos_alias]+'.')	
+		ls_alias =  ls_tablealias[ll_pos_alias]+" "
+		ls_fromwhere = inv_str.of_globalreplace( ls_fromwhere,ls_alias , ' ')	
+	next 
+end if 
+
+return ls_fromwhere
+
+
+end function
+

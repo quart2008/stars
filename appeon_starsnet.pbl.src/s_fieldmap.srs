@@ -1,0 +1,6 @@
+﻿$PBExportHeader$s_fieldmap.srs
+global type s_fieldmap from structure
+	string		szkey[]
+	string		szvalue[]
+end type
+

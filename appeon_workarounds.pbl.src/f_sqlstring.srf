@@ -1,0 +1,59 @@
+﻿$PBExportHeader$f_sqlstring.srf
+global type f_sqlstring from function_object
+end type
+
+forward prototypes
+global function string f_sqlstring (any aa_value, string astr_type)
+end prototypes
+
+global function string f_sqlstring (any aa_value, string astr_type);//***********************************************************************
+//. Function: f_sqlstring()
+//.
+//. Descr: For assembling sql syntax.
+//.
+//. Passed:	any		aa_value: data value
+//.			String	astr_type: data type
+//.
+//. Returns: String
+//.
+//***********************************************************************
+//   Date   Init               Description of Changes Made                
+// -------- ----	-------------------------------------------------------- 
+// 06/10/11 AndyG Track Appeon Performance tuning
+//***********************************************************************
+
+String	lstr_Value
+n_cst_string	lnv_string
+
+If IsNull(aa_Value) Then
+	lstr_Value = "null"
+	Return lstr_Value
+End If
+
+Choose Case astr_type
+	Case "N" //number
+		lstr_Value = String(aa_Value)
+	Case "S" //string
+//		lstr_Value = "'" + String(aa_Value) + "'"
+		lstr_Value = String(aa_Value) 
+//		If Left(lstr_Value, 2) <> "('" Then 
+		If pos(lstr_Value,"'") > 0 then 
+			lstr_Value = lnv_string.of_GlobalReplace( lstr_Value, "'", "''" )
+		End If
+		lstr_Value = "'" + lstr_Value + "'"
+		
+	Case "D" //datetime
+//		lstr_Value = "'" + String(aa_Value, "yyyy-mm-dd hh:mm:ss") + "'"
+//		If gs_dbms = 'ORA' Then
+//			lstr_Value = "to_date('" + String(aa_Value,"yyyy-mm-dd hh:mm:ss") + "', 'yyyy-mm-dd hh24:mi:ss')"
+//		Else
+//			lstr_Value = "'" + String(aa_Value, "yyyy-mm-dd hh:mm:ss") + "'"
+//		End If
+		lstr_Value = String(aa_Value, 'mm/dd/yyyy hh:mm:ss')
+		lstr_Value = gnv_sql.of_get_to_date (lstr_Value)
+End Choose
+
+Return lstr_Value
+
+end function
+

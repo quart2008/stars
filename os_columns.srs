@@ -1,0 +1,7 @@
+HA$PBExportHeader$os_columns.srs
+global type os_columns from structure
+	string		s_columnname
+	string		s_editstyle
+	datawindowchild		dwc_object
+end type
+

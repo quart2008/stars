@@ -1,0 +1,26 @@
+HA$PBExportHeader$f_write_text.srf
+$PBExportComments$Function to write text in line mode to a text file..See also: f_read_text
+global type f_write_text from function_object
+end type
+
+forward prototypes
+global function integer f_write_text (string thefile, string thetext, boolean appendit, integer createit, boolean closeit)
+end prototypes
+
+global function integer f_write_text (string thefile, string thetext, boolean appendit, integer createit, boolean closeit);int returnvalue
+if createit = 0 then
+	if appendit then
+  		createit = FileOpen ( thefile, linemode!, write!, lockreadwrite!)
+ 	else
+  		createit = FileOpen ( thefile, linemode!, write!, lockreadwrite!, Replace!)
+ 	end if
+end if
+if createit <> -1 and trim(thetext) <> '' then
+ 	FileWriteEx(createit, thetext)
+end if
+if closeit then
+ 	fileclose(createit)
+end if
+return createit
+end function
+

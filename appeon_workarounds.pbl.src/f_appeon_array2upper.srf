@@ -1,0 +1,47 @@
+﻿$PBExportHeader$f_appeon_array2upper.srf
+global type f_appeon_array2upper from function_object
+end type
+
+forward prototypes
+global subroutine f_appeon_array2upper (ref string as_array[])
+end prototypes
+
+global subroutine f_appeon_array2upper (ref string as_array[]);//***********************************************************************
+//. Function: f_appeon_array2upper()
+//.
+//. Descr: For change the value of string array to upper
+//.
+//. Passed:	String		as_array: ref
+//.
+//. Returns: None
+//.
+//***********************************************************************
+//   Date   Init               Description of Changes Made                
+// -------- ----	-------------------------------------------------------- 
+// 05/25/11 WinacentZ Track Appeon Performance tuning
+// 08/03/11 WinacentZ Track Appeon Performance tuning-fix bug
+//***********************************************************************
+Integer i, j, k, ll_upper
+j = UpperBound(as_array)
+String ls_array[]
+
+//for no values in datawindow sql's syntax that will error!
+If j <= 0 Then
+	as_array[1] = 'SpEcIaL VaLuE'
+End If
+ls_array[1] = Upper(as_array[1])
+For i = 2 To j
+	// 08/03/11 WinacentZ Track Appeon Performance tuning-fix bug
+	// when more than 1000 rows, it will error, so delete the repeat rows.
+//	as_array[i] = Upper(as_array[i])
+	ll_upper = UpperBound(ls_array)
+	For k = 1 To ll_upper
+		If Upper(as_array[i]) = ls_array[k] Then Exit
+		If k = ll_upper Then
+			ls_array[ll_upper + 1] = Upper(as_array[i])
+		End If
+	Next
+Next
+as_array = ls_array
+end subroutine
+

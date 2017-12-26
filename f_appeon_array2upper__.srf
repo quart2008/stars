@@ -1,0 +1,39 @@
+HA$PBExportHeader$f_appeon_array2upper__.srf
+global type f_appeon_array2upper__ from function_object
+end type
+
+forward prototypes
+global subroutine f_appeon_array2upper__ (ref string as_array[], string as_colname)
+end prototypes
+
+global subroutine f_appeon_array2upper__ (ref string as_array[], string as_colname);//***********************************************************************
+//. Function: f_appeon_array2upper()
+//.
+//. Descr: For change the value of string array to upper
+//.
+//. Passed:	StringArray	as_array	 : ref
+//. Passed:	String		as_colname: val
+//.
+//. Returns: None
+//.
+//***********************************************************************
+//   Date   Init               Description of Changes Made                
+// -------- ----	-------------------------------------------------------- 
+// 08/02/11 WinacentZ Track Appeon Performance tuning
+//***********************************************************************
+Integer i, j
+j = UpperBound(as_array)
+
+//for no values in datawindow sql's syntax that will error!
+If j <= 0 Then
+	as_array[1] = 'SpEcIaL VaLuE'
+End If
+
+For i = 1 To j
+	as_array[i] = Upper(as_array[i])
+Next
+
+If j <= 1000 Then Return
+
+end subroutine
+

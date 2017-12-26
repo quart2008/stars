@@ -1,0 +1,193 @@
+﻿$PBExportHeader$f_appeon_getdatetime.srf
+global type f_appeon_getdatetime from function_object
+end type
+
+forward prototypes
+global function datetime f_appeon_getdatetime (datetime adt, integer ai_type, long ai_amount)
+end prototypes
+
+global function datetime f_appeon_getdatetime (datetime adt, integer ai_type, long ai_amount);//***********************************************************************
+//. Function: f_appeon_getdatetime()
+//.
+//. Descr: For reduce the call database's times,so get the defference of server date/time and client date/time,
+//. 			so this function for get the datetime plus the defference
+//.
+//. Passed:		datetime		adt
+//. Passed:		integer		ai_type
+//. Passed:		long			ai_amount		--this is the defference of server date/time and client date/time
+//.
+//. Returns:	datetime
+//.
+//***********************************************************************
+//   Date   Init               Description of Changes Made                
+// -------- ----	-------------------------------------------------------- 
+// 06/24/11 WinacentZ Track Appeon Performance tuning
+//***********************************************************************
+long li_year, li_month, li_day, li_hour, li_minute, li_second
+long li_m, li_min, li_h, li_1, li_sec
+datetime ldt
+date ldate
+time ltime
+boolean lb_1 = true
+
+//Parsing DateTime
+if isnull(adt) then return adt
+ldt = adt
+ldate = date(ldt)
+ltime = time(ldt)
+li_year = year(ldate)
+li_month = month(ldate)
+li_day = day(ldate)
+
+li_hour = hour(ltime)
+li_minute = minute(ltime)
+li_second = second(ltime)
+
+choose case ai_type
+	case 1  //year
+		li_year = li_year + ai_amount
+	case 2  //month
+		li_month = li_month + ai_amount
+		li_m = li_month / 12
+		li_month = li_month - 12 * li_m
+		if li_month <= 0 then
+			li_m = li_m - 1
+			li_month = li_month + 12
+		end if
+			
+		li_year = li_year + li_m					
+	case 3  //day
+		li_day = li_day + ai_amount
+		li_1 = mod(li_year, 4)
+		do while lb_1
+			choose case li_month
+				case 1, 3, 5, 7, 8, 10, 12
+					if li_day > 31 then
+						li_day = li_day - 31
+						ldt = f_appeon_getdatetime(datetime(date(li_year, li_month, 1), ltime), 2, 1)
+						ldate = date(ldt)
+						li_year = year(ldate)
+						li_month = month(ldate)
+						continue
+					end if
+					if li_day < 1 then
+						if li_month = 8 then
+							li_day = li_day + 31							
+						elseif li_month = 3 then
+							if mod(li_year, 4) = 0 then
+								li_day = li_day + 29
+							else
+								li_day = li_day + 28
+							end if
+						else
+							li_day = li_day + 30
+						end if
+						ldt = f_appeon_getdatetime(datetime(date(li_year, li_month, 1), ltime), 2, -1)
+						ldate = date(ldt)
+						li_year = year(ldate)
+						li_month = month(ldate)
+						continue
+					end if
+					exit
+				case 2
+					if mod(li_year, 4) = 0 then
+						if li_day > 29 then
+							li_day = li_day - 29
+							ldt = f_appeon_getdatetime(datetime(date(li_year, li_month, 1), ltime), 2, 1)
+							ldate = date(ldt)
+							li_year = year(ldate)
+							li_month = month(ldate)
+							continue
+						end if
+						if li_day < 1 then
+							li_day = li_day + 31
+							ldt = f_appeon_getdatetime(datetime(date(li_year, li_month, 1), ltime), 2, -1)
+							ldate = date(ldt)
+							li_year = year(ldate)
+							li_month = month(ldate)
+							continue
+						end if
+					else
+						if li_day > 28 then
+							li_day = li_day - 28
+							ldt = f_appeon_getdatetime(datetime(date(li_year, li_month, 1), ltime), 2, 1)
+							ldate = date(ldt)
+							li_year = year(ldate)
+							li_month = month(ldate)
+							continue
+						end if
+						if li_day < 1 then
+							li_day = li_day + 31
+							ldt = f_appeon_getdatetime(datetime(date(li_year, li_month, 1), ltime), 2, -1)
+							ldate = date(ldt)
+							li_year = year(ldate)
+							li_month = month(ldate)
+							continue
+						end if
+					end if
+					exit
+				case 4, 6, 9, 11
+					if li_day > 30 then
+						li_day = li_day - 30
+						ldt = f_appeon_getdatetime(datetime(date(li_year, li_month, 1), ltime), 2, 1)
+						ldate = date(ldt)
+						li_year = year(ldate)
+						li_month = month(ldate)
+						continue
+					end if
+					if li_day < 1 then
+						li_day = li_day + 31
+						ldt = f_appeon_getdatetime(datetime(date(li_year, li_month, 1), ltime), 2, -1)
+						ldate = date(ldt)
+						li_year = year(ldate)
+						li_month = month(ldate)
+						continue
+					end if
+					exit
+				case else
+			end choose
+		loop
+	case 4  //hour
+		li_hour = li_hour + ai_amount		
+		li_h = li_hour / 24		
+		li_hour = li_hour - 24 * li_h
+		if li_hour < 0 then
+			li_h = li_h - 1
+			li_hour = li_hour + 24
+		end if	
+		if li_h <> 0 then
+			ldt = f_appeon_getdatetime(datetime(date(li_year, li_month, li_day), time(li_hour, li_minute, li_second)), 3, li_h)
+			ldate = date(ldt)
+			li_year = year(ldate)
+			li_month = month(ldate)
+			li_day = day(ldate)
+		end if
+	case 5  //minute
+		li_minute = li_minute + ai_amount
+		li_min = li_minute / 60
+		li_minute = li_minute - 60 * li_min
+		if li_minute < 0 then 
+			li_min = li_min - 1
+			li_minute = li_minute + 60
+		end if
+		if li_min <> 0 then
+			ldt = f_appeon_getdatetime(datetime(date(li_year, li_month, li_day), time(li_hour, li_minute, li_second)), 4, li_min)
+			Return ldt
+		end if		
+	case 6  //second
+		li_second = li_second + ai_amount
+		li_sec = li_second / 60
+		li_second = li_second - 60 * li_sec
+		if li_second < 0 then
+			li_sec = li_sec - 1
+			li_second = li_second + 60
+		end if
+		if li_sec <> 0 then
+			ldt = f_appeon_getdatetime(datetime(date(li_year, li_month, li_day), time(li_hour, li_minute, li_second)), 5, li_sec)
+			Return ldt
+		end if
+end choose
+
+return datetime(date(li_year, li_month, li_day), time(li_hour, li_minute, li_second))
+end function
+

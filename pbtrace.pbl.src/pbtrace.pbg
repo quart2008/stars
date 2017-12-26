@@ -1,0 +1,10 @@
+Save Format v3.0(19990112)
+@begin Libraries
+ "pbtrace.pbl" "";
+@end;
+@begin Objects 
+ "str_node.srs" "pbtrace.pbl";
+ "w_batreplace_eng.srw" "pbtrace.pbl";
+ "w_trace.srw" "pbtrace.pbl";
+ "w_traceanalysis.srw" "pbtrace.pbl";
+@end;
